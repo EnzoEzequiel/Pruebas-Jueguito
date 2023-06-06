@@ -60,7 +60,7 @@ def reset_game():
     jugador.rect.y = HEIGHT - jugador.rect.height - 10
 
 # Clase para representar al jugador
-class Player:
+class Jugador:
     def __init__(self):
         player_image = pygame.image.load(r'C:\Users\enzoe\Pictures\Screenshots\MarcoFirst.png')
         player_image = pygame.transform.scale(player_image, (PLAYER_WIDTH, PLAYER_HEIGHT))
@@ -104,7 +104,7 @@ class Player:
         screen.blit(self.image, self.rect)
 
 # Clase para representar a las balas
-class Bullet:
+class Bala:
     def __init__(self, x, y):
         self.rect = pygame.Rect(x, y, BULLET_WIDTH, BULLET_HEIGHT)
         self.color = RED
@@ -117,7 +117,7 @@ class Bullet:
         pygame.draw.rect(screen, self.color, self.rect)
 
 # Clase para representar a las balas de los enemigos
-class EnemyBullet:
+class BalaEnemiga:
     def __init__(self, x, y):
         self.rect = pygame.Rect(x, y, BULLET_WIDTH, BULLET_HEIGHT)
         self.color = BLUE
@@ -130,7 +130,7 @@ class EnemyBullet:
         pygame.draw.rect(screen, self.color, self.rect)
 
 # Clase para representar a los enemigos
-class Enemy:
+class Enemigo:
     def __init__(self, x):
         self.rect = pygame.Rect(x, HEIGHT - PLAYER_HEIGHT - 10, PLAYER_WIDTH, PLAYER_HEIGHT)
         self.color = RED
@@ -148,7 +148,7 @@ enemigos = []
 balas_enemigas = []
 
 # Crear al jugador
-jugador = Player()
+jugador = Jugador()
 
 # Bucle principal del juego
 running = True
@@ -164,7 +164,7 @@ while running:
 
         # Disparar una bala cuando se presiona la tecla de espacio
         if event.type == pygame.KEYDOWN and event.key == pygame.K_SPACE:
-            bullet = Bullet(jugador.rect.centerx, jugador.rect.y)
+            bullet = Bala(jugador.rect.centerx, jugador.rect.y)
             balas.append(bullet)
 
     screen.blit(imagen_de_fondo, (0, 0))
@@ -183,13 +183,13 @@ while running:
 
     # Generar nuevos enemigos
     if random.randint(0, 100) < 2:
-        enemy = Enemy(WIDTH)
+        enemy = Enemigo(WIDTH)
         enemigos.append(enemy)
 
     # Enemigos disparan balas
     for enemy in enemigos:
         if tiempo_actual - ultimo_disparo_enemigo > intervalo_disparo_enemigo:
-            bala_enemiga = EnemyBullet(enemy.rect.centerx,enemy.rect.y)
+            bala_enemiga = BalaEnemiga(enemy.rect.centerx,enemy.rect.y)
             balas_enemigas.append(bala_enemiga)
             ultimo_disparo_enemigo=tiempo_actual
             
