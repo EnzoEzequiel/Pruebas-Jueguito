@@ -68,9 +68,9 @@ class Player:
         # self.rect.x = 50
         # self.rect.y = HEIGHT - self.rect.height - 10
         # self.speed = PLAYER_SPEED
-        # self.lives = 3
-        # self.is_jumping = False
-        # self.jump_counter = 0
+        self.lives = 3
+        self.is_jumping = False
+        self.jump_counter = 0
         pygame.sprite.Sprite.__init__(self)
         self.char_type = char_type
         self.speed = speed
