@@ -1,6 +1,8 @@
 import pygame
 import random
 import recorte
+import sqlite3
+
 
 Ancho=800
 Alto=480
@@ -14,6 +16,7 @@ DORADO=[255,215,0]
 fonx=0
 fony=220
 
+#lista de listas  con stats de precio vida y costo
 stats=[[5,6,4,10,15],[1,2,1,5,8],[18,37,56,200,250]]
 
 
@@ -95,7 +98,8 @@ class Aliado (pygame.sprite.Sprite):
         self.zona_ataque = None
         self.zona_muerte = None
         self.radius = [40,50,50,20,40]
-        self.damage=[1,2,1,5,8]
+        #self.damage=[1,2,1,5,8]
+        self.damage=[8,8,8,8,8]
         self.espera=[[0,30],[0,30],[0,15],[0,30],[0,45]]
         self.attack = False
 
@@ -132,20 +136,52 @@ if __name__ == '__main__':
     pygame.init()
     pantalla=pygame.display.set_mode([Ancho,Alto])
     pygame.display.flip()
+    #segundos para el timer
+    secs = 0
+    mins = 0 
+    hours = 0
+    tiempoMax = ""
+    tiempoRecordNivelUno = ""
+    tiempoRecordNivelDos = ""
+    font = pygame.font.Font(None,32)
+    textTime = font.render("{}:{}:{}".format(hours,mins,secs), True, (255,255,255), (0,0,0))
+    textTimeRect = textTime.get_rect()
+    #centro el tiempo en el centro de la pantalla
+    textTimeRect.center = Ancho//2.3, Alto//10
 
     '''--------------------------globales---------------------------------'''
     entuto = False
+    nivel_dos = False
     oleadas = [7,1,5,4,2,3,1,0,5,2,3,4,3,2,1,3,2,1,1,0,0,6,1,5,4,2,3,1,0,5,2,3,4,3,2,1,3,2,1,1,0,0,]
-    #oleadas = [7,6,5,4,3,2,1,0]
+    #oleadas = [7,6,5,4,3,2,1,0] #misma oleada pero mas corta
+    #oleadas = [0,1,2,3,4,5,6,7] #arranca cn el boss final
     spawn = 30
     generation = 15
-    fondotutorial=pygame.image.load(r"C:\Users\enzoe\Desktop\Jueguito\Pruebas-Jueguito\Interfaz\fondotutorial.jpeg")
-    '''--------------------------globales---------------------------------'''
+    '''--------------------------conexionBase---------------------------------'''
+    conn = sqlite3.connect('BaseMetalSurvival.db')
+    cursorBase = conn.cursor()
+    '''--------------------------agrego nuevos datos de prueba---------------------------------'''
+    # new_record = "01:11:11"  
+    # new_record_nivel_dos = "02:22:22"  
 
+    # cursor.execute("INSERT INTO TIEMPOS_RECORD (RECORD_NIVEL_UNO, RECORD_NIVEL_DOS) VALUES (?, ?)", (new_record, new_record_nivel_dos))
+    # conn.commit()  # Guarda los cambios en la base de datos
+
+    # cursorBase.execute("SELECT RECORD_NIVEL_UNO, RECORD_NIVEL_DOS FROM TIEMPOS_RECORD WHERE RECORD_NIVEL_UNO IS NOT NULL OR RECORD_NIVEL_DOS IS NOT NULL ORDER BY ID_RECORD DESC LIMIT 1")
+    # result = cursorBase.fetchone()
+
+    # Imprime el resultado obtenido
+    # if result:
+    #     print("Último registro nivel uno:", result)
+    
+    '''--------------------------globales---------------------------------'''
+    fondotutorial=pygame.image.load(r"C:\Users\enzoe\Desktop\Jueguito\Pruebas-Jueguito\Interfaz\fondotutorial.jpeg")
     fuente= pygame.font.Font(None, 30)
     fuente2 = pygame.font.Font(None, 20)
     fondo=pygame.image.load(r"C:\Users\enzoe\Desktop\Jueguito\Pruebas-Jueguito\Interfaz\mapa.png")
     fondomapa=pygame.image.load(r"C:\Users\enzoe\Desktop\Jueguito\Pruebas-Jueguito\Interfaz\fondomapa.png")
+    fondo_nivel_dos=pygame.image.load(r"C:\Users\enzoe\Desktop\Jueguito\Pruebas-Jueguito\Interfaz\mapaNivelDos.png")
+    fondomapa_nivel_dos=pygame.image.load(r"C:\Users\enzoe\Desktop\Jueguito\Pruebas-Jueguito\Interfaz\fondomapaNivelDos.png")
     gameover=pygame.image.load(r"C:\Users\enzoe\Desktop\Jueguito\Pruebas-Jueguito\Interfaz\gameover.png")
     principal=pygame.image.load(r"C:\Users\enzoe\Desktop\Jueguito\Pruebas-Jueguito\Interfaz\principal.png")
     continuar=pygame.image.load(r"C:\Users\enzoe\Desktop\Jueguito\Pruebas-Jueguito\Interfaz\continuar.png")
@@ -157,10 +193,21 @@ if __name__ == '__main__':
     moneypng=pygame.image.load(r"C:\Users\enzoe\Desktop\Jueguito\Pruebas-Jueguito\Sprites\Money.png")
     ost=pygame.mixer.Sound(r"C:\Users\enzoe\Desktop\Jueguito\Pruebas-Jueguito\Sonidos\ost.ogg")
     ostgo=pygame.mixer.Sound(r"C:\Users\enzoe\Desktop\Jueguito\Pruebas-Jueguito\Sonidos\GameOver.ogg")
-
+    ostmomias=pygame.mixer.Sound(r"C:\Users\enzoe\Desktop\Jueguito\Pruebas-Jueguito\Sonidos\segundoNivel.ogg")
+    #txt_record_actual=fuente.render(tiempoMax, False, (255,255,255))
+    txt_record_actual=fuente.render("RECORD Nvl1:", False, (255,255,255))
+    txt_record_actual_Nvl2=fuente.render("RECORD Nvl2:", False, (255,255,255))
+    cursorBase.execute("SELECT RECORD_NIVEL_UNO FROM TIEMPOS_RECORD WHERE RECORD_NIVEL_UNO IS NOT NULL ORDER BY ID_RECORD DESC LIMIT 1")
+    resultUno = cursorBase.fetchone()
+    record_actual_nivel_uno=fuente.render(str(resultUno[0]), False, (255,255,255))
+    cursorBase.execute("SELECT RECORD_NIVEL_DOS FROM TIEMPOS_RECORD WHERE RECORD_NIVEL_DOS IS NOT NULL ORDER BY ID_RECORD DESC LIMIT 1")
+    resultDos = cursorBase.fetchone()
+    record_actual_nivel_dos=fuente.render(str(resultDos[0]), False, (255,255,255))
+               
     ost.play(-1) #asi se reproduce indefinidamente
+    
     infon=fondo.get_rect()
-    ost.set_volume(0.2)   #VOLUMEN
+    #ost.set_volume(0.2)   #VOLUMEN
     spritesaliados = []
     '''recortes de todos los sprites aliados en la funcion recorte'''
     spritesaliados.append(recorte.recorte(pygame.image.load(r"C:\Users\enzoe\Desktop\Jueguito\Pruebas-Jueguito\Sprites\marco.png"),[3,8,7,2],8,4))
@@ -252,6 +299,7 @@ if __name__ == '__main__':
 
     pos_y,pos_x=250,200
     reloj=pygame.time.Clock()
+    
     pygame.display.flip()
     fin = False
     pausa = True
@@ -267,6 +315,13 @@ if __name__ == '__main__':
     findgv = True #Fin de juego victoria
     reprod = False
     money = 0
+    seteoRecord_nivel_dos = False
+    seteoRecord_nivel_uno = False
+    
+    #############################################################################################
+    ####################   INICIO    ###########################################################
+    #############################################################################################
+    
     while not fin:
         for event in pygame.event.get():
             # Comprobación de eventos
@@ -276,15 +331,21 @@ if __name__ == '__main__':
                 # Acciones cuando se presiona una tecla
                 if event.key == pygame.K_p:
                     # Pausa el juego o finaliza según la posición del cursor
-                    if punt1.rect.y == 90:
+                    if punt1.rect.y == 90:#continuar
+                        start_time = pygame.time.get_ticks()
                         pausa = not pausa
-                    elif punt1.rect.y == 210:
+                    elif punt1.rect.y == 210:#salir
                         fin = True
-                    elif punt1.rect.y == 170:
+                    elif punt1.rect.y == 170:#tutorial seteo en true
                         entuto = not entuto
-                    if punt1.rect.y == 130:
+                    if punt1.rect.y == 130:#reiniciar
                         # Reinicia el juego eliminando a los aliados y enemigos,
                         # restablece la vida de los fuertes, reinicia variables y oleadas
+                        start_time = 0
+                        start_time = pygame.time.get_ticks()
+                        secs = 0
+                        mins = 0 
+                        hours = 0
                         for a in aliados:
                             aliados.remove(a)
                             todos.remove(a)
@@ -292,12 +353,15 @@ if __name__ == '__main__':
                             enemigos.remove(e)
                             todos.remove(e)
                         fuerte1.vida = 500
-                        fuerte2.vida = 2000
+                        fuerte2.vida = 200
                         entuto = False
                         oleadas = [7,1,5,4,2,3,1,0,5,2,3,4,3,2,1,3,2,1,1,0,0,6,1,5,4,2,3,1,0,5,2,3,4,3,2,1,3,2,1,1,0,0,]
+                        #oleadas = [7,6,5,4,3,2,1,0]
+                        #oleadas = [0,1,2,3,4,5,6,7]
                         spawn = 30
                         generation = 15
                         money = 0
+                        pausa = not pausa
                 if event.key == pygame.K_UP:
                     # Mueve hacia arriba los elementos del menú
                     for e in menu:
@@ -340,8 +404,20 @@ if __name__ == '__main__':
                 for b in Selaliados:
                     b.click = True
 
-
+#########################################################################################
+######################             IN GAME              #################################
+#########################################################################################
         if pausa == False:
+            current_time = pygame.time.get_ticks() - start_time
+
+            millisecs = current_time // 1000
+            secs = millisecs % 60
+            mins = (millisecs // 60) % 60
+            hours = (millisecs // 3600) % 60
+
+                
+            textTime = font.render(f"Tiempo: {hours:02d}:{mins:02d}:{secs:02d}", True, (255,255,255), (0,0,0))
+            
             # Limitadores de pantalla en X
             posm = list(pygame.mouse.get_pos())
 
@@ -362,17 +438,24 @@ if __name__ == '__main__':
                         e.rect.x += 10
 
             # Incrementar la variable "money" si es menor que 1000
-            if money < 1000:
+            if money < 100000:
                 money += 1
 
             # Llenar la pantalla con color NEGRO
             pantalla.fill(NEGRO)
+            
+            if nivel_dos:
+                # Dibujar el fondo del mapa
+                pantalla.blit(fondomapa_nivel_dos, [0, 0])
 
-            # Dibujar el fondo del mapa
-            pantalla.blit(fondomapa, [0, 0])
+                # Dibujar el fondo con desplazamiento en las coordenadas (fonx, fony)
+                pantalla.blit(fondo_nivel_dos, [fonx, fony])
+            else: 
+                # Dibujar el fondo del mapa
+                pantalla.blit(fondomapa, [0, 0])
 
-            # Dibujar el fondo con desplazamiento en las coordenadas (fonx, fony)
-            pantalla.blit(fondo, [fonx, fony])
+                # Dibujar el fondo con desplazamiento en las coordenadas (fonx, fony)
+                pantalla.blit(fondo, [fonx, fony])
 
 
             #Generacion de enemigos
@@ -440,6 +523,7 @@ if __name__ == '__main__':
                         alcance=pygame.sprite.collide_circle(a,e)
                         if alcance:
                             for i9 in range (a.vida):
+                                #DIBUJO LA VIDA DEL aliado CON CIRCULITOS
                                 pygame.draw.circle(pantalla, VERDE, [5+a.rect.left+i9*7, a.rect.top-5], 2)
                             e.vel_x = 0
                             e.accion = 0
@@ -461,6 +545,7 @@ if __name__ == '__main__':
                     alcance=pygame.sprite.collide_circle(a,e)
                     if alcance:
                         for i in range (a.vida):
+                            #DIBUJO LA VIDA DEL FUERTE CON 200 CIRCULITOS
                             pygame.draw.circle(pantalla, ROJO, [a.rect.left+i, a.rect.top-5], 2)
                         e.vel_x = 0
                         e.accion = 0
@@ -485,6 +570,7 @@ if __name__ == '__main__':
                     alcance=pygame.sprite.collide_circle(a,e)
                     if alcance:
                         for i in range (a.vida):
+                            #DIBUJO LA VIDA DEL FUERTE CON 200 CIRCULITOS
                             pygame.draw.circle(pantalla, ROJO, [a.rect.left+i, a.rect.top-5], 2)
                         e.vel_x = 0
                         e.accion = 0
@@ -500,6 +586,46 @@ if __name__ == '__main__':
                             e.espera[0]-=1
                 #disparo de estados del juego
                 elif a.vida<=0:
+                    tiempoMax = font.render(f"Tiempo Alcanzado: {hours:02d}:{mins:02d}:{secs:02d}", True, (255,255,255), (0,0,0))
+                    tiempoComparativo = f"{hours:02d}:{mins:02d}:{secs:02d}"
+                    tiempoMaxRect = tiempoMax.get_rect()
+                    #centro el tiempo en el centro de la pantalla
+                    tiempoMaxRect.scale_by(2)
+                    tiempoMaxRect.center = Ancho//2, Alto//0.5
+                    #HORAS MINUTOS Y SEGUNDOS DE TIEMPO COMPARATIVO
+                    horaC=(int(tiempoComparativo.split(':')[0]))
+                    minC=(int(tiempoComparativo.split(':')[1]))
+                    secC=(int(tiempoComparativo.split(':')[2]))
+                    
+                    
+                    #HORAS MINUTOS Y SEGUNDOS DE nivel uno
+                    horaR=(int(resultUno[0].split(':')[0]))
+                    minR=(int(resultUno[0].split(':')[1]))
+                    secR=(int(resultUno[0].split(':')[2]))
+                    
+                    #HORAS MINUTOS Y SEGUNDOS DE nivel dos
+                    horaR2=(int(resultDos[0].split(':')[0]))
+                    minR2=(int(resultDos[0].split(':')[1]))
+                    secR2=(int(resultDos[0].split(':')[2]))
+                    
+                    if not seteoRecord_nivel_dos:
+                        #---------------------RECORDS------------------------
+                        
+                        if (horaC < horaR2 or (horaR2 == horaC and  minC < minR2) or ( horaC == horaR2  and minC == minR2 and secC < secR2)) and nivel_dos:
+                            print("ENTRO A RECORDS NIVEL DOS!!!!!")
+                            print(tiempoComparativo)
+                            seteoRecord_nivel_dos = True
+                            cursorBase.execute("INSERT INTO TIEMPOS_RECORD (RECORD_NIVEL_UNO, RECORD_NIVEL_DOS) VALUES (?, ?)", (None, tiempoComparativo))
+                            conn.commit()  # Guarda los cambios en la base de datos
+                    
+                    if not seteoRecord_nivel_uno:
+                        if horaC < horaR or (horaR == horaC and  minC < minR) or ( horaC == horaR  and minC == minR and secC < secR):
+                            print("ENTRO A RECORDS NIVEL UNOOOOOOOOO!!!!!")
+                            print(tiempoComparativo)
+                            seteoRecord_nivel_uno = True
+                            cursorBase.execute("INSERT INTO TIEMPOS_RECORD (RECORD_NIVEL_UNO, RECORD_NIVEL_DOS) VALUES (?, ?)", (tiempoComparativo, None))
+                            conn.commit()  # Guarda los cambios en la base de datos
+                        
                     findg = True
                     findgv = True
                     pausa = True
@@ -528,6 +654,7 @@ if __name__ == '__main__':
             pantalla.blit(txt_costo,[30, Alto-50])
             pantalla.blit(moneypng,[600, Alto-90])
             moneytxt = fuente.render(str(money), False, DORADO)
+            pantalla.blit(textTime, textTimeRect)
             pantalla.blit(moneytxt,[665, Alto-50])
 
             for b in Selaliados:
@@ -559,12 +686,19 @@ if __name__ == '__main__':
             pantalla.blit(reiniciar,[30,130])
             pantalla.blit(tutorial,[30,170])
             pantalla.blit(salir,[30,210])
+            pantalla.blit(txt_record_actual,[30,300])
+            pantalla.blit(record_actual_nivel_uno,[30,340])
+            pantalla.blit(txt_record_actual_Nvl2,[30,380])
+            pantalla.blit(record_actual_nivel_dos,[30,420])
             menu.update()
             menu.draw(pantalla)
             pygame.display.flip()
         #DIBUJO FONDO GAMEOVER
         elif pausa == True and findg == True:
             if findgd == True:
+                secs = 0
+                mins = 0 
+                hours = 0
                 pantalla.fill(NEGRO)
                 ost.stop()
                 pantalla.blit(gameover,[0,0])
@@ -574,13 +708,66 @@ if __name__ == '__main__':
                     reprod = True
             #DIBUJO FONDO VICTORIA
             elif findgv == True:
+                current_timeV = 0
+                current_timeV = pygame.time.get_ticks() 
+                
+                millisecsV = current_timeV // 1000
+                secsV = millisecsV % 60
+                print("segundos victoria:")
+                print(secsV)
+                
+                secs = 0
+                mins = 0 
+                hours = 0
                 pantalla.fill(NEGRO)
                 ost.stop()
+                
                 ostvictoria=pygame.mixer.Sound(r"C:\Users\enzoe\Desktop\Jueguito\Pruebas-Jueguito\Sonidos\Victoria.ogg")
-                victoriaimagen=pygame.image.load(r"C:\Users\enzoe\Desktop\Jueguito\Pruebas-Jueguito\Interfaz\fotovictoria.jpeg")
-                pantalla.blit(victoriaimagen,[0,0])
+                if nivel_dos == True:
+                    ostmomias.stop()
+                    victoriaimagen=pygame.image.load(r"C:\Users\enzoe\Desktop\Jueguito\Pruebas-Jueguito\Interfaz\fotovictoria.jpeg")
+                    pantalla.blit(victoriaimagen,[0,0])
+                    
+                    # Cerrar la conexión a la base de datos
+                    conn.close()
+                else:
+                    victoriaimagen=pygame.image.load(r"C:\Users\enzoe\Desktop\Jueguito\Pruebas-Jueguito\Interfaz\fotoPrimeraVictoria.png")
+                    pantalla.blit(victoriaimagen,[0,Alto//4])
+                
+                pantalla.blit(tiempoMax,[Ancho//3,0])
+                
                 pygame.display.flip()
                 if reprod == False:
                     ostvictoria.play()
                     reprod = True
+                
+                if 40 <= secsV <= 50 and not nivel_dos:
+                        # Reinicia el juego eliminando a los aliados y enemigos,
+                        # restablece la vida de los fuertes, reinicia variables y oleadas
+                        ostmomias.play(-1)
+                        nivel_dos = True
+                        reprod = False
+                        start_time = 0
+                        start_time = pygame.time.get_ticks()
+                        secs = 0
+                        mins = 0 
+                        hours = 0
+                        for a in aliados:
+                            aliados.remove(a)
+                            todos.remove(a)
+                        for e in enemigos:
+                            enemigos.remove(e)
+                            todos.remove(e)
+                        fuerte1.vida = 500
+                        fuerte2.vida = 200
+                        entuto = False
+                        oleadas = [7,1,5,4,2,3,1,0,5,2,3,4,3,2,1,3,2,1,1,0,0,6,1,5,4,2,3,1,0,5,2,3,4,3,2,1,3,2,1,1,0,0,]
+                        #oleadas = [7,6,5,4,3,2,1,0]
+                        #oleadas = [0,1,2,3,4,5,6,7]
+                        spawn = 30
+                        generation = 15
+                        money = 0
+                        findg = not findg
+                        findgv = not findgv
+                        pausa = not pausa
                     

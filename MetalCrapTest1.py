@@ -1,468 +1,660 @@
 import pygame
 import random
+import recorte
 
-obstacle = pygame.Rect(0, 520, 800, 80)
-obstacleA = pygame.Rect(170, 310, 40, 40)
-obstacleB = pygame.Rect(190, 340, 40, 40)
-obstacleC = pygame.Rect(213, 380, 40, 40)
-obstacleD = pygame.Rect(230, 410, 40, 40)
-obstacleE = pygame.Rect(245, 440, 40, 40)
-obstacleF = pygame.Rect(500, 435, 40, 40)
-obstaculo_segundo_piso = pygame.Rect(0, 300, 800, 10)
+Ancho=800
+Alto=480
+VERDE=[0,255,0]
+AZUL=[0,0,255]
+ROJO=[255,0,0]
+NEGRO=[0,0,0]
+BLANCO=[255,255,255]
+DORADO=[255,215,0]
+#posicion de la imagen de fondo
+fonx=0
+fony=220
 
-# Dimensiones de la ventana del juego
-WIDTH = 800
-HEIGHT = 600
-
-# Tamaño del jugador
-PLAYER_WIDTH = 34
-PLAYER_HEIGHT = 36
-
-# Tamaño de la bala
-BULLET_WIDTH = 10
-BULLET_HEIGHT = 20
-
-# Velocidad del jugador
-PLAYER_SPEED = 7
-JUMP_HEIGHT = 150
-GRAVITY = 8
-
-# Velocidad de la bala
-BULLET_SPEED = 10
-
-# Velocidad del enemigo
-ENEMY_SPEED = 5
-
-ultimo_disparo_enemigo = 0
-intervalo_disparo_enemigo = 4000
-
-imagen_de_fondo = pygame.image.load(r'C:\Users\enzoe\Pictures\Screenshots\Fondo.png')
-imagen_de_fondo = pygame.transform.scale(imagen_de_fondo, (WIDTH, HEIGHT))
-
-# Inicializar Pygame
-pygame.init()
-screen = pygame.display.set_mode((WIDTH, HEIGHT))
-clock = pygame.time.Clock()
+#lista de listas  con stats de precio vida y costo
+stats=[[5,6,4,10,15],[1,2,1,5,8],[18,37,56,200,250]]
 
 
-########################################################################################
-###########################   pruebas  ########################################
-#####################################################################################
+class MaCursor(pygame.sprite.Sprite):
+    def __init__(self,pont):
+        pygame.sprite.Sprite.__init__(self)
+        self.image=pont
+        self.rect=self.image.get_rect()
+        self.rect.x=226
+        self.rect.y=90
+        self.opu=False # movimiento hacia arriba (up).
+        self.opa=False # movimiento hacia abajo
 
-
-class SpriteSheet():
-    def __init__(self, image):
-        self.sheet = image
-
-    def get_image(self, frame, width, height, scale):
-        image = pygame.Surface((width, height), pygame.SRCALPHA).convert_alpha()
-        image.blit(self.sheet, (0, 0), ((frame * width), 0, width, height))
-        image = pygame.transform.scale(image, (width * scale, height * scale))
-
-        return image
-
-# Función para mostrar el mensaje de fin de juego
-def game_over():
-    font = pygame.font.Font(None, 36)
-    text = font.render("FIN DEL JUEGO", True, (255, 0, 0))
-    text_rect = text.get_rect(center=(WIDTH/2, HEIGHT/2))
-    screen.blit(text, text_rect)
-    pygame.display.flip()
-    pygame.time.wait(2000)
-    reset_game()
-    
-def reset_game():
-    jugador.lives = 3
-    balas.clear()
-    enemigos.clear()
-    balas_enemigas.clear()
-    jugador.rect.x = 50
-    jugador.rect.y = HEIGHT - jugador.rect.height - 10
-    
-def prueba_colision(rect,superficies):
-    contactos = []
-    for superficie in superficies:
-        if rect.colliderect(superficie):
-            contactos.append(superficie)
-    return contactos
-
-def detectar_colision_obstaculo():
-    #escalera izquierda
-    if obstacleA.colliderect(rectangulo_jugador) or obstacleB.colliderect(rectangulo_jugador) or obstacleC.colliderect(rectangulo_jugador) or obstacleD.colliderect(rectangulo_jugador) or obstacleE.colliderect(rectangulo_jugador):
-        # jugador.en_el_suelo = True  # Establecer al jugador en el suelo
-        # jugador.rect.y = obstacleA.y - jugador.rect.height  # Ajustar la posición del jugador para que esté justo encima del obstáculo
-        print("colision")
-    else:
-        print("no hay colision")
-    
-     
-    if obstacle.colliderect(rectangulo_jugador):
-        jugador.en_el_suelo = True  # Establecer al jugador en el suelo
-        jugador.rect.y = obstacle.y - jugador.rect.height  # Ajustar la posición del jugador para que esté justo encima del obstáculo
-    else:
-        jugador.en_el_suelo = False  # Establecer al jugador en el aire
-
-
-    
-########################################################################################
-#######################     JUGADOR     ################################################
-########################################################################################
-
-# Clase para representar al jugador
-class Jugador:
-    
-    def __init__(self):
-        
-        self.miro_izquierda = False
-        self.esta_saltando = False
-        self.en_el_suelo = True
-        self.miro_derecha = False
-        self.se_mueve = False
-        
-        # Lista de rutas de imágenes
-        rutas_imagenes = [r'C:\Users\enzoe\Desktop\Jueguito\Pruebas-Jueguito\assetsSlug\img\player\MarcoAcciones\MarcoDerecho\Pistola\Camina\C0.png', 
-                          r'C:\Users\enzoe\Desktop\Jueguito\Pruebas-Jueguito\assetsSlug\img\player\MarcoAcciones\MarcoDerecho\Pistola\Camina\C1.png',
-                          r'C:\Users\enzoe\Desktop\Jueguito\Pruebas-Jueguito\assetsSlug\img\player\MarcoAcciones\MarcoDerecho\Pistola\Camina\C2.png',
-                          r'C:\Users\enzoe\Desktop\Jueguito\Pruebas-Jueguito\assetsSlug\img\player\MarcoAcciones\MarcoDerecho\Pistola\Camina\C3.png']
-
-        self.caminata_frames = []
-        
-        # Iterar sobre las rutas de imágenes y cargarlas en la lista
-        for ruta in rutas_imagenes:
-            imagen_cargada = pygame.image.load(ruta).convert_alpha()
-            self.caminata_frames.append(imagen_cargada)
-            
-        self.caminata_current_frame = 0
-        
-        torso = pygame.image.load(r'C:\Users\enzoe\Desktop\Jueguito\Pruebas-Jueguito\assetsSlug\img\player\general\TorsoMarco.png').convert_alpha()
-        piernas = pygame.image.load(r'C:\Users\enzoe\Desktop\Jueguito\Pruebas-Jueguito\assetsSlug\img\player\general\piernasMarco.png').convert_alpha()
-        salto = pygame.image.load(r'C:\Users\enzoe\Desktop\Jueguito\Pruebas-Jueguito\assetsSlug\img\player\MarcoAcciones\MarcoDerecho\Pistola\EnSalto\0.png').convert_alpha()
-        
-        
-        salto_sheet = SpriteSheet(salto)
-        self.salto_frames = []
-        for frame in range(1):
-            image = salto_sheet.get_image(frame, 80, 110, 0.98)
-            self.salto_frames.append(image)
-        self.salto_current_frame = 0
-        
-        torso_sheet = SpriteSheet(torso)
-        self.torso_frames = []
-        for frame in range(4):
-            image = torso_sheet.get_image(frame, PLAYER_WIDTH, PLAYER_HEIGHT, 2.5)
-            self.torso_frames.append(image)
-        self.torso_current_frame = 0
-
-        piernas_sheet = SpriteSheet(piernas)
-        self.piernas_frames = []
-        for frame in range(1):
-            image = piernas_sheet.get_image(frame, PLAYER_WIDTH, PLAYER_HEIGHT, 2.5)
-            self.piernas_frames.append(image)
-        self.piernas_current_frame = 0
-
-        
-        self.rect = self.torso_frames[self.torso_current_frame].get_rect()
-        self.rect.x = 50
-        self.rect.y = HEIGHT - self.rect.height - 67
-        self.speed = PLAYER_SPEED
-        self.lives = 3
-        self.is_jumping = False
-        self.jump_counter = 0
-        self.frame_counter = 0
-        self.is_reverse = False
-        
-########################################################################################
-#######################     DIBUJO TECLAS     #########################################
-########################################################################################
-
-    def update(self, keys):
-        
-        
-        if keys[pygame.K_LEFT]:
-            self.rect.x -= self.speed
-            self.miro_izquierda = True
-            self.miro_derecha = False
-            self.se_mueve = True
-        else:
-            self.se_mueve = False
-
-        if keys[pygame.K_RIGHT]:
-            self.rect.x += self.speed
-            self.miro_izquierda = False
-            self.miro_derecha = True
-            self.se_mueve = True
-        else:
-            self.se_mueve = False 
-              
-        if keys[pygame.K_UP] and self.en_el_suelo:
-            self.esta_saltando = True
-            self.en_el_suelo = False
-            self.miro_derecha = False
-            self.jump_counter = 0
-
-        if self.esta_saltando:
-            self.rect.y -= GRAVITY
-            self.jump_counter += GRAVITY
-
-            if self.jump_counter >= JUMP_HEIGHT:
-                self.esta_saltando = False
-                self.en_el_suelo = False
-                
-        if not self.en_el_suelo:
-            self.jump_counter += 1
-        if self.en_el_suelo:
-            self.jump_counter = 0 
-            
-        if self.miro_derecha:
-            self.frame_counter += 1
-            if self.frame_counter >= 4:
-                self.frame_counter = 0
-                self.caminata_current_frame = (self.caminata_current_frame + 1) % len(self.caminata_frames)
-
-            
-        # Aplicar gravedad
-        if not self.esta_saltando and not self.en_el_suelo and self.rect.y < HEIGHT - self.rect.height - 10:
-            self.rect.y += GRAVITY
-        elif self.rect.y >= HEIGHT - self.rect.height - 10:
-            self.en_el_suelo = True
-
-        # Limitar el movimiento del jugador dentro de la pantalla
-        if self.rect.left < 0:
-            self.rect.left = 0
-        if self.rect.right > WIDTH:
-            self.rect.right = WIDTH
-
-        # Actualizar animación de torso
-        self.frame_counter += 0.50
-        if self.frame_counter >= 5:
-            self.frame_counter = 0
-            if self.is_reverse:
-                self.torso_current_frame -= 1
-                if self.torso_current_frame < 0:
-                    self.torso_current_frame = 1
-                    self.is_reverse = False
+    def update(self):
+        """
+        Actualiza la posición del cursor en respuesta a los comandos de movimiento.
+        """
+        if self.opu:
+             if self.rect.y==90:
+                 self.rect.y=210
+                 self.opu=False
+             else:
+                 self.rect.y-=40
+                 self.opu=False
+        elif self.opa:
+            if self.rect.y==210:
+                self.rect.y=90
+                self.opa=False
             else:
-                self.torso_current_frame = (self.torso_current_frame + 1) % len(self.torso_frames)
-                if self.torso_current_frame == len(self.torso_frames) - 1:
-                    self.is_reverse = True
+                self.rect.y+=40
+                self.opa=False
+
+class Enemigo (pygame.sprite.Sprite):
+    def __init__(self,filas):
+        pygame.sprite.Sprite.__init__(self)
+        self.filas = filas
+        self.id = 0
+        self.accion = 1
+        self.i = 0
+        self.f = self.filas[self.accion]
+        self.image = self.f[self.i]
+        self.rect = self.image.get_rect()
+        self.vida=[5,6,7,4,5,8,50,100]
+        self.rect.x,self.rect.y = 10,Alto-190
+        self.vel_x = -4
+        self.radius = [40,70,80,30,50,50,30,60]
+        self.damage=[1,2,1,3,3,5,10,15]
+        self.espera=[[0,30],[0,30],[0,15],[0,20],[0,25],[0,30],[0,45],[0,45]]
+        self.attack = False
+        self.zona_ataque = None
+        self.zona_muerte = None
+
+    def update (self):
+        """
+        Actualiza la posición y el estado del enemigo.
+        """
+        self.rect.x+= self.vel_x
+        self.f = self.filas[self.accion]
+        self.i += 1
+        if self.i >= len(self.f):
+            self.i = 0
+            self.attack = False
+        self.image = self.f[self.i]
 
 
-########################################################################################
-#######################     DIBUJO VIDAS       #########################################
-########################################################################################
+class Aliado (pygame.sprite.Sprite):
+    def __init__(self,filas):
+        pygame.sprite.Sprite.__init__(self)
+        self.filas = filas
+        self.accion = 1
+        self.i = 0
+        self.precio = stats[2]
+        self.f = self.filas[self.accion]
+        self.image = self.f[self.i]
+        self.rect = self.image.get_rect()
+        self.vida=[5,6,4,10,20]
+        self.rect.x,self.rect.y = 10,Alto-190
+        self.vel_x = 4
+        self.zona_ataque = None
+        self.zona_muerte = None
+        self.radius = [40,50,50,20,40]
+        self.damage=[1,2,1,5,8]
+        self.espera=[[0,30],[0,30],[0,15],[0,30],[0,45]]
+        self.attack = False
 
-    def draw_lives(self):
-        font = pygame.font.Font(None, 50)
-        text = font.render("Vidas: " + str(self.lives), True, (255, 255, 255))
-        screen.blit(text, (10, 10))
-        
-########################################################################################
-#######################     DIBUJO PERSONAJE   #########################################
-########################################################################################
-        
-    def draw(self):
-        salto_image = self.salto_frames[self.salto_current_frame]
+    def update (self):
+        """
+        Actualiza la posición y el estado del aliado.
+        """
+        self.rect.x+= self.vel_x
+        self.f = self.filas[self.accion]
+        self.i += 1
+        if self.i >= len(self.f):
+            self.i = 0
+            self.attack = False
+        self.image = self.f[self.i]
 
-        if self.esta_saltando and not self.en_el_suelo or self.jump_counter > 50:
-            screen.blit(salto_image, self.rect)
+class SelectAliado (pygame.sprite.Sprite):
+    def __init__(self,id):
+        pygame.sprite.Sprite.__init__(self)
+        self.image = pygame.Surface([40,80])
+        self.id = id
+        self.click = True
+        self.rect = self.image.get_rect()
+        self.rect.x,self.rect.y = 5,Alto-100
 
-        elif self.esta_saltando and not self.en_el_suelo:
-            if self.miro_izquierda:
-                salto_image = pygame.transform.flip(salto_image, True, False)
-            screen.blit(salto_image, self.rect)
+class fuerte(pygame.sprite.Sprite):
+    def __init__(self):
+        pygame.sprite.Sprite.__init__(self)
+        self.image = pygame.image.load(r"C:\Users\enzoe\Desktop\Jueguito\Pruebas-Jueguito\Sprites\Fuerte1.png")
+        self.vida = 200
+        self.rect = self.image.get_rect()
+        self.rect.x,self.rect.y = 0,170
 
-        else:
-            torso_image = self.torso_frames[self.torso_current_frame]
-            piernas_image = self.piernas_frames[self.piernas_current_frame]
-                        
-            if not self.se_mueve:
-                if self.miro_izquierda:
-                    torso_image = pygame.transform.flip(torso_image, True, False)
-                    piernas_image = pygame.transform.flip(piernas_image, True, False)
-                    screen.blit(piernas_image, self.rect)
-                    screen.blit(torso_image, (self.rect.x - 6, self.rect.y + 1 - torso_image.get_height() + 60))
-                else:
-                    screen.blit(piernas_image, self.rect)
-                    screen.blit(torso_image, (self.rect.x + 6, self.rect.y + 1 - torso_image.get_height() + 60))
-            elif self.se_mueve:
-                if self.miro_izquierda:
-                    caminata_image = self.caminata_frames[self.caminata_current_frame]
-                    caminata_image = pygame.transform.flip(caminata_image, True, False)
-                    screen.blit(caminata_image, (self.rect.x, self.rect.y - 35))
-                else:
-                    caminata_image = self.caminata_frames[self.caminata_current_frame]
-                    screen.blit(caminata_image, (self.rect.x, self.rect.y - 35))
-
-
-
-
-########################################################################################
-#######################     CLASES     #################################################
-########################################################################################
-
-
-# Clase para representar a las balas
-class Bala:
-    def __init__(self, x, y):
-        self.rect = pygame.Rect(x, y, BULLET_WIDTH, BULLET_HEIGHT)
-        self.color = (255, 0, 0)
-        self.speed = BULLET_SPEED
-
-    def update(self):
-        self.rect.x += self.speed
-
-    def draw(self):
-        pygame.draw.rect(screen, self.color, self.rect)
-
-# Clase para representar a las balas de los enemigos
-class BalaEnemiga:
-    def __init__(self, x, y):
-        self.rect = pygame.Rect(x, y, BULLET_WIDTH, BULLET_HEIGHT)
-        self.color = (0, 0, 255)
-        self.speed = BULLET_SPEED
-
-    def update(self):
-        self.rect.x -= self.speed
-
-    def draw(self):
-        pygame.draw.rect(screen, self.color, self.rect)
-
-# Clase para representar a los enemigos
-
-class Enemigo:
-    def __init__(self, x, side):
-        if side == "left":
-            self.rect = pygame.Rect(x, jugador.rect.y, PLAYER_WIDTH, PLAYER_HEIGHT)
-        elif side == "right":
-            self.rect = pygame.Rect(x, jugador.rect.y, -PLAYER_WIDTH, PLAYER_HEIGHT)
-        self.color = (255, 0, 0)
-        self.speed = ENEMY_SPEED
-        self.side = side  
-
-    def update(self):
-        if self.side == "left":  
-            self.rect.x += self.speed
-        else:
-            self.rect.x -= self.speed
-
-    def draw(self):
-        pygame.draw.rect(screen, self.color, self.rect)
-        
-        
-########################################################################################
-#######################     MAIN     #################################################
-########################################################################################
-
-
-# Listas para almacenar a las balas, enemigos y balas de los enemigos
-balas = []
-enemigos = []
-balas_enemigas = []
-# Crear al jugador
-jugador = Jugador()
-
-# Bucle principal del juego
-running = True
-while running:
-    tiempo_actual = pygame.time.get_ticks()
-    
-    keys = pygame.key.get_pressed()
-    
-    for event in pygame.event.get():
-        if event.type == pygame.QUIT:
-            running = False
-
-        # Disparar una bala cuando se presiona la tecla de espacio
-        if event.type == pygame.KEYDOWN and event.key == pygame.K_SPACE:
-            bullet = Bala(jugador.rect.centerx, jugador.rect.y)
-            balas.append(bullet)
-
-    # Dibujar el fondo
-    screen.fill((0, 0, 0))
-    screen.blit(imagen_de_fondo, (0, 0))
-    
-    #dibujos de prueba
-    pygame.draw.rect(screen, (255,0,0), obstacleA, 4)
-    pygame.draw.rect(screen, (255,0,0), obstacleB, 4)
-    pygame.draw.rect(screen, (255,0,0), obstacleC, 4)
-    pygame.draw.rect(screen, (255,0,0), obstacleD, 4)
-    pygame.draw.rect(screen, (255,0,0), obstacleE, 4)
-    pygame.draw.rect(screen, (255,0,0), obstacleF, 4)
-    pygame.draw.rect(screen, (0,0,255), obstaculo_segundo_piso, 4)
-    
-    
-    rectangulo_jugador = jugador.rect.copy()  # Copiar el rectángulo del jugador
-    rectangulo_jugador.y += jugador.speed  # Mover el rectángulo del jugador hacia abajo según su velocidad
-
-    detectar_colision_obstaculo()
-    
-    jugador.update(keys)
-    jugador.draw()
-    jugador.draw_lives()
-    
-    # Actualizar y dibujar las balas del jugador
-    for bullet in balas:
-        bullet.update()
-        bullet.draw()
-
-        # Eliminar las balas que salen de la pantalla
-        if bullet.rect.right > WIDTH:
-            balas.remove(bullet)
-
-    
-    # Generar nuevos enemigos
-    if random.randint(0, 100) < 1:
-        side = random.choice(["left", "right"])
-        if side == "left":
-            x = 0
-        elif side == "right":
-            x = WIDTH - PLAYER_WIDTH
-        enemigo = Enemigo(x, side)
-        enemigos.append(enemigo)
-
-
-    # Actualizar y dibujar los enemigos
-    for enemigo in enemigos:
-        enemigo.update()
-        enemigo.draw()
-
-        # Eliminar los enemigos que salen de la pantalla
-        if enemigo.rect.right < 0:
-            enemigos.remove(enemigo)
-
-    # Actualizar y dibujar las balas de los enemigos
-    for bullet in balas_enemigas:
-        bullet.update()
-        bullet.draw()
-
-        # Eliminar las balas de los enemigos que salen de la pantalla
-        if bullet.rect.right < 0 or bullet.rect.left > WIDTH:
-            balas_enemigas.remove(bullet)
-
-    # Comprobar colisiones entre balas del jugador y enemigos
-    for bullet in balas:
-        for enemigo in enemigos:
-            if bullet.rect.colliderect(enemigo.rect):
-                balas.remove(bullet)
-                enemigos.remove(enemigo)
-
-    # Comprobar colisiones entre balas de los enemigos y el jugador
-    for bullet in balas_enemigas:
-        if bullet.rect.colliderect(jugador.rect):
-            jugador.lives -= 1
-            balas_enemigas.remove(bullet)
-            if jugador.lives == 0:
-                game_over()
-
-    # Disparar balas de los enemigos cada cierto tiempo
-    if tiempo_actual - ultimo_disparo_enemigo > intervalo_disparo_enemigo:
-        for enemigo in enemigos:
-            bullet = BalaEnemiga(enemigo.rect.centerx, enemigo.rect.y)
-            balas_enemigas.append(bullet)
-        ultimo_disparo_enemigo = tiempo_actual
-
+if __name__ == '__main__':
+    pygame.init()
+    pantalla=pygame.display.set_mode([Ancho,Alto])
     pygame.display.flip()
-    clock.tick(60)
+    #segundos para el timer
+    secs = 0
+    mins = 0 
+    hours = 0
+    tiempoMax = ""
+    tiempoRecord = ""
+    font = pygame.font.Font(None,32)
+    textTime = font.render("{}:{}:{}".format(hours,mins,secs), True, (255,255,255), (0,0,0))
+    textTimeRect = textTime.get_rect()
+    #centro el tiempo en el centro de la pantalla
+    textTimeRect.center = Ancho//2.3, Alto//10
 
-# Cerrar Pygame al salir del juego
-pygame.quit()
+    '''--------------------------globales---------------------------------'''
+    entuto = False
+    oleadas = [7,1,5,4,2,3,1,0,5,2,3,4,3,2,1,3,2,1,1,0,0,6,1,5,4,2,3,1,0,5,2,3,4,3,2,1,3,2,1,1,0,0,]
+    #oleadas = [7,6,5,4,3,2,1,0] #misma oleada pero mas corta
+    #oleadas = [0,1,2,3,4,5,6,7] #arranca cn el boss final
+    spawn = 30
+    generation = 15
+    fondotutorial=pygame.image.load(r"C:\Users\enzoe\Desktop\Jueguito\Pruebas-Jueguito\Interfaz\fondotutorial.jpeg")
+    '''--------------------------globales---------------------------------'''
+
+    fuente= pygame.font.Font(None, 30)
+    fuente2 = pygame.font.Font(None, 20)
+    fondo=pygame.image.load(r"C:\Users\enzoe\Desktop\Jueguito\Pruebas-Jueguito\Interfaz\mapa.png")
+    fondomapa=pygame.image.load(r"C:\Users\enzoe\Desktop\Jueguito\Pruebas-Jueguito\Interfaz\fondomapa.png")
+    gameover=pygame.image.load(r"C:\Users\enzoe\Desktop\Jueguito\Pruebas-Jueguito\Interfaz\gameover.png")
+    principal=pygame.image.load(r"C:\Users\enzoe\Desktop\Jueguito\Pruebas-Jueguito\Interfaz\principal.png")
+    continuar=pygame.image.load(r"C:\Users\enzoe\Desktop\Jueguito\Pruebas-Jueguito\Interfaz\continuar.png")
+    reiniciar=pygame.image.load(r"C:\Users\enzoe\Desktop\Jueguito\Pruebas-Jueguito\Interfaz\reiniciar.png")
+    tutorial=pygame.image.load(r"C:\Users\enzoe\Desktop\Jueguito\Pruebas-Jueguito\Interfaz\tutorial.png")
+    salir=pygame.image.load(r"C:\Users\enzoe\Desktop\Jueguito\Pruebas-Jueguito\Interfaz\salir.png")
+    cursor=pygame.image.load(r"C:\Users\enzoe\Desktop\Jueguito\Pruebas-Jueguito\Interfaz\cursor.png")
+    cursor2=pygame.image.load(r"C:\Users\enzoe\Desktop\Jueguito\Pruebas-Jueguito\Interfaz\cursor2.png")
+    moneypng=pygame.image.load(r"C:\Users\enzoe\Desktop\Jueguito\Pruebas-Jueguito\Sprites\Money.png")
+    ost=pygame.mixer.Sound(r"C:\Users\enzoe\Desktop\Jueguito\Pruebas-Jueguito\Sonidos\ost.ogg")
+    ostgo=pygame.mixer.Sound(r"C:\Users\enzoe\Desktop\Jueguito\Pruebas-Jueguito\Sonidos\GameOver.ogg")
+
+    ost.play(-1) #asi se reproduce indefinidamente
+    infon=fondo.get_rect()
+    #ost.set_volume(0.2)   #VOLUMEN
+    spritesaliados = []
+    '''recortes de todos los sprites aliados en la funcion recorte'''
+    spritesaliados.append(recorte.recorte(pygame.image.load(r"C:\Users\enzoe\Desktop\Jueguito\Pruebas-Jueguito\Sprites\marco.png"),[3,8,7,2],8,4))
+    spritesaliados.append(recorte.recorte(pygame.image.load(r"C:\Users\enzoe\Desktop\Jueguito\Pruebas-Jueguito\Sprites\ZombieTarma.png"),[12,24,12,11],24,4))
+    spritesaliados.append(recorte.recorte(pygame.image.load(r"C:\Users\enzoe\Desktop\Jueguito\Pruebas-Jueguito\Sprites\haduken.png"),[4,13,5,7],13,4))
+    spritesaliados.append(recorte.recorte(pygame.image.load(r"C:\Users\enzoe\Desktop\Jueguito\Pruebas-Jueguito\Sprites\tanque1.png"),[4,14,6,4],14,4))
+    spritesaliados.append(recorte.recorte(pygame.image.load(r"C:\Users\enzoe\Desktop\Jueguito\Pruebas-Jueguito\Sprites\MetalSlug.png"),[8,21,16],21))
+
+    spritesenemigos = []
+    '''-----------recortes de todos los sprites enemigos en la funcion recorte'''
+    spritesenemigos.append(recorte.recorte(pygame.image.load(r"C:\Users\enzoe\Desktop\Jueguito\Pruebas-Jueguito\Sprites\arabe.png"),[4,12,8,4],12,4))
+    spritesenemigos.append(recorte.recorte(pygame.image.load(r"C:\Users\enzoe\Desktop\Jueguito\Pruebas-Jueguito\Sprites\soldier.png"),[4,12,11],12,4))
+    spritesenemigos.append(recorte.recorte(pygame.image.load(r"C:\Users\enzoe\Desktop\Jueguito\Pruebas-Jueguito\Sprites\gunner.png"),[8,16,17,4],17,4))
+    spritesenemigos.append(recorte.recorte(pygame.image.load(r"C:\Users\enzoe\Desktop\Jueguito\Pruebas-Jueguito\Sprites\ufo.png"),[8,8,8,7],8,4))
+    spritesenemigos.append(recorte.recorte(pygame.image.load(r"C:\Users\enzoe\Desktop\Jueguito\Pruebas-Jueguito\Sprites\alien.png"),[16,16,17,21],21,4))
+    spritesenemigos.append(recorte.recorte(pygame.image.load(r"C:\Users\enzoe\Desktop\Jueguito\Pruebas-Jueguito\Sprites\towertank.png"),[2,6,6,6],6,4))
+    spritesenemigos.append(recorte.recorte(pygame.image.load(r"C:\Users\enzoe\Desktop\Jueguito\Pruebas-Jueguito\Sprites\cangrejo.png"),[7,12,12,7],12,4))
+    spritesenemigos.append(recorte.recorte(pygame.image.load(r"C:\Users\enzoe\Desktop\Jueguito\Pruebas-Jueguito\Sprites\metalreal.png"),[5,7,31],31,4))
+
+
+    sonialiadosatk = []
+    '''--------------------Sonidos atauqe------------------------'''
+    sonialiadosatk.append(pygame.mixer.Sound(r"C:\Users\enzoe\Desktop\Jueguito\Pruebas-Jueguito\Sonidos\marcoatk.ogg"))
+    sonialiadosatk.append(pygame.mixer.Sound(r"C:\Users\enzoe\Desktop\Jueguito\Pruebas-Jueguito\Sonidos\zombiedisparo.ogg"))
+    sonialiadosatk.append(pygame.mixer.Sound(r"C:\Users\enzoe\Desktop\Jueguito\Pruebas-Jueguito\Sonidos\ataqueprisionero.ogg"))
+    sonialiadosatk.append(pygame.mixer.Sound(r"C:\Users\enzoe\Desktop\Jueguito\Pruebas-Jueguito\Sonidos\tanque1ataque.ogg"))
+    sonialiadosatk.append(pygame.mixer.Sound(r"C:\Users\enzoe\Desktop\Jueguito\Pruebas-Jueguito\Sonidos\sfx_tanque.ogg"))
+
+
+    sonialiadosmuerte = []
+    '''--------------------Sonidos Muerte------------------------'''
+    sonialiadosmuerte.append(pygame.mixer.Sound(r"C:\Users\enzoe\Desktop\Jueguito\Pruebas-Jueguito\Sonidos\muertemarco.ogg"))
+    sonialiadosmuerte.append(pygame.mixer.Sound(r"C:\Users\enzoe\Desktop\Jueguito\Pruebas-Jueguito\Sonidos\muertezombie.ogg"))
+    sonialiadosmuerte.append(pygame.mixer.Sound(r"C:\Users\enzoe\Desktop\Jueguito\Pruebas-Jueguito\Sonidos\muertearabe.ogg"))
+    sonialiadosmuerte.append(pygame.mixer.Sound(r"C:\Users\enzoe\Desktop\Jueguito\Pruebas-Jueguito\Sonidos\tanque1muerte.ogg"))
+    sonialiadosmuerte.append(pygame.mixer.Sound(r"C:\Users\enzoe\Desktop\Jueguito\Pruebas-Jueguito\Sonidos\tanquemuerte.ogg"))
+
+    sonienemigoatk = []
+    '''--------------------Sonidos atauqe------------------------'''
+    sonienemigoatk.append(pygame.mixer.Sound(r"C:\Users\enzoe\Desktop\Jueguito\Pruebas-Jueguito\Sonidos\arabeatk.ogg"))
+    sonienemigoatk.append(pygame.mixer.Sound(r"C:\Users\enzoe\Desktop\Jueguito\Pruebas-Jueguito\Sonidos\soldadoatk.ogg"))
+    sonienemigoatk.append(pygame.mixer.Sound(r"C:\Users\enzoe\Desktop\Jueguito\Pruebas-Jueguito\Sonidos\ataquegunner.ogg"))
+    sonienemigoatk.append(pygame.mixer.Sound(r"C:\Users\enzoe\Desktop\Jueguito\Pruebas-Jueguito\Sonidos\atqueufo.ogg"))
+    sonienemigoatk.append(pygame.mixer.Sound(r"C:\Users\enzoe\Desktop\Jueguito\Pruebas-Jueguito\Sonidos\ataquealien.ogg"))
+    sonienemigoatk.append(pygame.mixer.Sound(r"C:\Users\enzoe\Desktop\Jueguito\Pruebas-Jueguito\Sonidos\towertankatk.ogg"))
+    sonienemigoatk.append(pygame.mixer.Sound(r"C:\Users\enzoe\Desktop\Jueguito\Pruebas-Jueguito\Sonidos\cangrejoatk.ogg"))
+    sonienemigoatk.append(pygame.mixer.Sound(r"C:\Users\enzoe\Desktop\Jueguito\Pruebas-Jueguito\Sonidos\metalrealatk.ogg"))
+    
+
+
+    sonienemigomuerte = []
+    '''--------------------Sonidos Muerte------------------------'''
+    sonienemigomuerte.append(pygame.mixer.Sound(r"C:\Users\enzoe\Desktop\Jueguito\Pruebas-Jueguito\Sonidos\muertearabe.ogg"))
+    sonienemigomuerte.append(pygame.mixer.Sound(r"C:\Users\enzoe\Desktop\Jueguito\Pruebas-Jueguito\Sonidos\soldadomuerte.ogg"))
+    sonienemigomuerte.append(pygame.mixer.Sound(r"C:\Users\enzoe\Desktop\Jueguito\Pruebas-Jueguito\Sonidos\metralladoramuerte.ogg"))
+    sonienemigomuerte.append(pygame.mixer.Sound(r"C:\Users\enzoe\Desktop\Jueguito\Pruebas-Jueguito\Sonidos\muertealienyufo.ogg"))
+    sonienemigomuerte.append(pygame.mixer.Sound(r"C:\Users\enzoe\Desktop\Jueguito\Pruebas-Jueguito\Sonidos\muertealienyufo.ogg"))
+    sonienemigomuerte.append(pygame.mixer.Sound(r"C:\Users\enzoe\Desktop\Jueguito\Pruebas-Jueguito\Sonidos\towertankmuerte.ogg"))
+    sonienemigomuerte.append(pygame.mixer.Sound(r"C:\Users\enzoe\Desktop\Jueguito\Pruebas-Jueguito\Sonidos\cangrejomuerte.ogg"))
+    sonienemigomuerte.append(pygame.mixer.Sound(r"C:\Users\enzoe\Desktop\Jueguito\Pruebas-Jueguito\Sonidos\metalrealmuerte.ogg"))
+
+
+
+    txt_salud=fuente.render("Salud", False, ROJO)
+    txt_dama=fuente.render("Golpe", False, VERDE)
+    txt_costo=fuente.render("Costo", False, DORADO)
+
+
+    #grupo general
+    todos = pygame.sprite.Group()
+    aliados = pygame.sprite.Group()
+    Selaliados = pygame.sprite.Group()
+    enemigos = pygame.sprite.Group()
+    menu = pygame.sprite.Group()
+    fuerte1 = fuerte()
+    todos.add(fuerte1)
+    fuerte2 = fuerte()
+    fuerte2.image = pygame.image.load(r"C:\Users\enzoe\Desktop\Jueguito\Pruebas-Jueguito\Sprites\Fuerte2.png")
+    fuerte2.rect.x = 1884
+    todos.add(fuerte2)
+
+    #aliados
+    for i in range (5):
+        b = SelectAliado(i+1)
+        b.rect.x = 81*i+150
+        b.rect.y = Alto - 70
+        b.image = spritesaliados[i][0][0]
+        Selaliados.add(b)
+
+    pos_y,pos_x=250,200
+    reloj=pygame.time.Clock()
+    
+    pygame.display.flip()
+    fin = False
+    pausa = True
+    punt1 = MaCursor(cursor)
+    punt1.rect.x=8
+    punt2 = MaCursor(cursor2)
+    punt2.rect.x=162
+    menu.add(punt1)
+    menu.add(punt2)
+    aux = 0
+    findg = False #Fin de juego
+    findgd = False #Fin de juego derrota
+    findgv = True #Fin de juego victoria
+    reprod = False
+    money = 0
+    
+    #############################################################################################
+    ####################   INICIO    ###########################################################
+    #############################################################################################
+    
+    while not fin:
+        for event in pygame.event.get():
+            # Comprobación de eventos
+            if event.type == pygame.QUIT:
+                fin = True
+            if event.type == pygame.KEYDOWN:
+                # Acciones cuando se presiona una tecla
+                if event.key == pygame.K_p:
+                    # Pausa el juego o finaliza según la posición del cursor
+                    if punt1.rect.y == 90:#continuar
+                        start_time = pygame.time.get_ticks()
+                        pausa = not pausa
+                    elif punt1.rect.y == 210:#salir
+                        fin = True
+                    elif punt1.rect.y == 170:#tutorial seteo en true
+                        entuto = not entuto
+                    if punt1.rect.y == 130:#reiniciar
+                        # Reinicia el juego eliminando a los aliados y enemigos,
+                        # restablece la vida de los fuertes, reinicia variables y oleadas
+                        start_time = 0
+                        start_time = pygame.time.get_ticks()
+                        secs = 0
+                        mins = 0 
+                        hours = 0
+                        for a in aliados:
+                            aliados.remove(a)
+                            todos.remove(a)
+                        for e in enemigos:
+                            enemigos.remove(e)
+                            todos.remove(e)
+                        fuerte1.vida = 500
+                        fuerte2.vida = 2000
+                        entuto = False
+                        oleadas = [7,1,5,4,2,3,1,0,5,2,3,4,3,2,1,3,2,1,1,0,0,6,1,5,4,2,3,1,0,5,2,3,4,3,2,1,3,2,1,1,0,0,]
+                        #oleadas = [7,6,5,4,3,2,1,0]
+                        #oleadas = [0,1,2,3,4,5,6,7]
+                        spawn = 30
+                        generation = 15
+                        money = 0
+                        pausa = not pausa
+                if event.key == pygame.K_UP:
+                    # Mueve hacia arriba los elementos del menú
+                    for e in menu:
+                        e.opu = True
+                if event.key == pygame.K_DOWN:
+                    # Mueve hacia abajo los elementos del menú
+                    for e in menu:
+                        e.opa = True
+            if event.type == pygame.KEYUP:
+                pass
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                # Acciones cuando se presiona un botón del ratón
+                pos = pygame.mouse.get_pos()
+                for b in Selaliados:
+                    if b.rect.collidepoint(pos):
+                        # Verifica si se hizo clic en un botón de aliado seleccionado
+                        # y agrega el aliado correspondiente si se cumple la condición
+                        if b.click and money >= stats[2][b.id-1]:
+                            b.click = False
+                            ali = Aliado(spritesaliados[b.id-1])
+                            ali.damage = ali.damage[b.id-1]
+                            ali.espera = ali.espera[b.id-1]
+                            ali.vida = ali.vida[b.id-1]
+                            ali.radius = ali.radius[b.id-1]
+                            ali.precio = ali.precio[b.id-1]
+                            ali.zona_ataque = sonialiadosatk[b.id-1]
+                            ali.zona_muerte = sonialiadosmuerte[b.id-1]
+                            money -= stats[2][b.id-1]
+                            if b.id == 4:
+                                ali.rect.y = Alto - 210
+                            elif b.id == 5:
+                                ali.rect.y = ali.rect.y - 10
+                            aliados.add(ali)
+                            todos.add(ali)
+                            ali.rect.x=fonx+50
+            if event.type == pygame.MOUSEBUTTONUP:
+                # Acciones cuando se suelta un botón del ratón
+                for c in enemigos:
+                    c.click = False
+                for b in Selaliados:
+                    b.click = True
+
+#########################################################################################
+######################             IN GAME              #################################
+#########################################################################################
+        if pausa == False:
+            current_time = pygame.time.get_ticks() - start_time
+
+            millisecs = current_time // 1000
+            secs = millisecs % 60
+            mins = (millisecs // 60) % 60
+            hours = (millisecs // 3600) % 60
+
+                
+            textTime = font.render(f"Tiempo: {hours:02d}:{mins:02d}:{secs:02d}", True, (255,255,255), (0,0,0))
+            
+            # Limitadores de pantalla en X
+            posm = list(pygame.mouse.get_pos())
+
+            # Limitador de desplazamiento hacia la izquierda
+            if posm[0] > Ancho - 50:
+                if fonx - 5 >= Ancho - infon[2]:
+                    fonx -= 10
+                    lsmov = todos
+                    for e in lsmov:
+                        e.rect.x -= 10
+
+            # Limitador de desplazamiento hacia la derecha
+            if posm[0] < 50:
+                if fonx + 15 <= 0:
+                    fonx += 10
+                    lsmov = todos
+                    for e in lsmov:
+                        e.rect.x += 10
+
+            # Incrementar la variable "money" si es menor que 1000
+            if money < 100000:
+                money += 1
+
+            # Llenar la pantalla con color NEGRO
+            pantalla.fill(NEGRO)
+
+            # Dibujar el fondo del mapa
+            pantalla.blit(fondomapa, [0, 0])
+
+            # Dibujar el fondo con desplazamiento en las coordenadas (fonx, fony)
+            pantalla.blit(fondo, [fonx, fony])
+
+
+            #Generacion de enemigos
+            if generation == 0:
+                # Si la generación actual es igual a 0
+                if len(oleadas) > 0:
+                    # Si hay oleadas restantes
+                    enemy = oleadas.pop()
+                    # Extrae la próxima oleada de la lista de oleadas y la asigna a la variable "enemy"
+                    generation = (enemy+1)*spawn
+                    # Calcula la generación actual basada en la oleada y el valor de "spawn"
+                    c = Enemigo(spritesenemigos[enemy])
+                    # Crea un nuevo objeto "Enemigo" con la imagen correspondiente a la oleada actual
+                    c.id = enemy
+                    c.radius = c.radius[enemy]
+                    c.damage = c.damage[enemy]
+                    c.espera = c.espera[enemy]
+                    c.vida = c.vida[enemy]
+                    c.zona_ataque = sonienemigoatk[enemy]
+                    c.zona_muerte = sonienemigomuerte[enemy]
+                    # Configura las propiedades del enemigo basadas en la oleada actual
+                    enemigos.add(c)
+                    todos.add(c)
+                    c.rect.x, c.rect.bottom = infon[2] + fonx - 100, Alto - 134
+                    # Agrega el enemigo a los grupos de sprites y establece su posición en la pantalla
+                elif len(oleadas) == 0:
+                    # Si no quedan más oleadas
+                    findgv = True
+                    findg = True
+                    pausa = True
+                    # Establece las variables para finalizar el juego y pausarlo
+
+            else:
+                # Si la generación actual no es 0
+                generation -= 1
+                # Reduce en 1 el valor de la generación actual
+
+
+            #Colision enemigo llega a rango aliado
+            for e in enemigos:
+                for a in aliados:
+                    if a.vida > 0 and e.vida > 0:
+                        alcance=pygame.sprite.collide_circle(e,a)# si hay colision en un rango circular
+                        if alcance:
+                            for i9 in range (e.vida):
+                                pygame.draw.circle(pantalla, ROJO, [5+e.rect.left+i9*7, e.rect.top-5], 2)
+                                #DIBUJA circulos que representen cada punto de vida
+                            a.vel_x = 0
+                            a.accion = 0
+                            if a.attack:
+                                a.accion = 2
+                            if a.espera[0]<=0:
+                                a.i = 0
+                                e.vida-=a.damage
+                                a.zona_ataque.play()
+                                a.attack = True
+                                a.espera[0]=a.espera[1]
+                            else:
+                                a.espera[0]-=1
+
+                #Colision aliado llega a rango enemigo
+            for a in aliados:
+                for e in enemigos:
+                    if a.vida > 0 and e.vida > 0:
+                        alcance=pygame.sprite.collide_circle(a,e)
+                        if alcance:
+                            for i9 in range (a.vida):
+                                #DIBUJO LA VIDA DEL aliado CON CIRCULITOS
+                                pygame.draw.circle(pantalla, VERDE, [5+a.rect.left+i9*7, a.rect.top-5], 2)
+                            e.vel_x = 0
+                            e.accion = 0
+                            if e.attack:
+                                e.accion = 2
+                            if e.espera[0]<=0:
+                                e.i = 0
+                                e.zona_ataque.play()
+                                a.vida-=e.damage
+                                e.attack = True
+                                e.espera[0]=e.espera[1]
+                            else:
+                                e.espera[0]-=1
+
+            #Colision enemigo llega a fuerte aliado
+            for e in enemigos:
+                a=fuerte1
+                if a.vida > 0 and e.vida > 0:
+                    alcance=pygame.sprite.collide_circle(a,e)
+                    if alcance:
+                        for i in range (a.vida):
+                            #DIBUJO LA VIDA DEL FUERTE CON 200 CIRCULITOS
+                            pygame.draw.circle(pantalla, ROJO, [a.rect.left+i, a.rect.top-5], 2)
+                        e.vel_x = 0
+                        e.accion = 0
+                        if e.attack:
+                            e.accion = 2
+                        if e.espera[0]<=0:
+                            e.i = 0
+                            e.zona_ataque.play()
+                            a.vida-=e.damage
+                            e.attack = True
+                            e.espera[0]=e.espera[1]
+                        else:
+                            e.espera[0]-=1
+                elif a.vida<=0:
+                    findg = True
+                    findgd = True
+                    pausa = True
+
+            for e in aliados:
+                a=fuerte2
+                if a.vida > 0 and e.vida > 0:
+                    alcance=pygame.sprite.collide_circle(a,e)
+                    if alcance:
+                        for i in range (a.vida):
+                            #DIBUJO LA VIDA DEL FUERTE CON 200 CIRCULITOS
+                            pygame.draw.circle(pantalla, ROJO, [a.rect.left+i, a.rect.top-5], 2)
+                        e.vel_x = 0
+                        e.accion = 0
+                        if e.attack:
+                            e.accion = 2
+                        if e.espera[0]<=0:
+                            e.i = 0
+                            e.zona_ataque.play()
+                            a.vida-=e.damage
+                            e.attack = True
+                            e.espera[0]=e.espera[1]
+                        else:
+                            e.espera[0]-=1
+                #disparo de estados del juego
+                elif a.vida<=0:
+                    tiempoMax = font.render(f"Tiempo Alcanzado: {hours:02d}:{mins:02d}:{secs:02d}", True, (255,255,255), (0,0,0))
+                    print("TIEMPO RECORD VALE {}:{}:{}".format(hours,mins,secs))
+                    tiempoMaxRect = tiempoMax.get_rect()
+                    #centro el tiempo en el centro de la pantalla
+                    tiempoMaxRect.scale_by(2)
+                    tiempoMaxRect.center = Ancho//2, Alto//0.5
+                    
+                    tiempoRecord = font.render(f"Tiempo Record: {00:02d}:{2:02d}:{13:02d}", True, (255,255,255), (0,0,0))
+                    tiempoRecordRect = tiempoRecord.get_rect()
+                    #centro el tiempo en el centro de la pantalla
+                    tiempoRecordRect.scale_by(2)
+                    tiempoRecordRect.center = Ancho//2, Alto
+                    
+                    tiempoRecord_hours = 0
+                    tiempoRecord_mins = 2
+                    tiempoRecord_secs = 13
+
+                    if hours < tiempoRecord_hours or (hours == tiempoRecord_hours and mins < tiempoRecord_mins) or (hours == tiempoRecord_hours and mins == tiempoRecord_mins and secs < tiempoRecord_secs):
+                        print("entro a nuevo record")
+                        tiempoRecord = font.render(f"Nuevo Record: {hours:02d}:{mins:02d}:{secs:02d}", True, (255,255,255), (0,0,0))
+  
+                    findg = True
+                    findgv = True
+                    pausa = True
+            #Eliminacion vida=0
+            for a in aliados:
+                for e in enemigos:
+                    if e.vida <= 0 or a.vida <= 0:
+                        for a2 in aliados:
+                            a2.vel_x = 4
+                            a2.accion = 1
+                        for e2 in enemigos:
+                            e2.vel_x = -4
+                            e2.accion = 1
+                        if e.vida<=0:
+                            e.zona_muerte.play()
+                            enemigos.remove(e)
+                            todos.remove(e)
+                        if a.vida<=0:
+                            a.zona_muerte.play()
+                            aliados.remove(a)
+                            todos.remove(a)
+            #DIBUJO BAJA NEGRA BLITEANDO EL TEXTO DEL COSTO DAÑO Y SALUD 
+            pygame.draw.polygon(pantalla, NEGRO, [(0,Alto-120),(0,Alto),(Ancho,Alto),(Ancho,Alto-120)])
+            pantalla.blit(txt_salud,[30, Alto-90])
+            pantalla.blit(txt_dama,[30, Alto-70])
+            pantalla.blit(txt_costo,[30, Alto-50])
+            pantalla.blit(moneypng,[600, Alto-90])
+            moneytxt = fuente.render(str(money), False, DORADO)
+            pantalla.blit(textTime, textTimeRect)
+            pantalla.blit(moneytxt,[665, Alto-50])
+
+            for b in Selaliados:
+                txt_vsalud = fuente2.render(str(stats[0][b.id-1]), False, ROJO)
+                pantalla.blit(txt_vsalud,[b.rect.x+15, b.rect.y-34])
+                txt_vdama = fuente2.render(str(stats[1][b.id-1]), False, VERDE)
+                pantalla.blit(txt_vdama,[b.rect.x+15, b.rect.y-22])
+                txt_vcosto = fuente2.render(str(stats[2][b.id-1]), False, DORADO)
+                pantalla.blit(txt_vcosto,[b.rect.x+15, b.rect.y-10]) #mostrar atributos de los seleccionables
+            todos.update()
+            todos.draw(pantalla)
+            enemigos.draw(pantalla)
+            aliados.draw(pantalla)
+            Selaliados.draw(pantalla)
+            pygame.display.flip()
+            reloj.tick(15)
+
+        #DIBUJO FONDO DEL TUTORIAL
+        elif pausa == True and entuto == True: 
+            pantalla.fill(NEGRO) 
+            pantalla.blit(fondotutorial,[0,0]) 
+            punt1.rect.y = 170 
+            pygame.display.flip() 
+        #DIBUJO FONDO MENU PRINCIPAL
+        elif pausa == True and findg == False:
+            pantalla.fill(NEGRO)
+            pantalla.blit(principal,[90,27])
+            pantalla.blit(continuar,[30,90])
+            pantalla.blit(reiniciar,[30,130])
+            pantalla.blit(tutorial,[30,170])
+            pantalla.blit(salir,[30,210])
+            menu.update()
+            menu.draw(pantalla)
+            pygame.display.flip()
+        #DIBUJO FONDO GAMEOVER
+        elif pausa == True and findg == True:
+            if findgd == True:
+                secs = 0
+                mins = 0 
+                hours = 0
+                pantalla.fill(NEGRO)
+                ost.stop()
+                pantalla.blit(gameover,[0,0])
+                pygame.display.flip()
+                if reprod == False:
+                    ostgo.play()
+                    reprod = True
+            #DIBUJO FONDO VICTORIA
+            elif findgv == True:
+                secs = 0
+                mins = 0 
+                hours = 0
+                pantalla.fill(NEGRO)
+                ost.stop()
+                ostvictoria=pygame.mixer.Sound(r"C:\Users\enzoe\Desktop\Jueguito\Pruebas-Jueguito\Sonidos\Victoria.ogg")
+                victoriaimagen=pygame.image.load(r"C:\Users\enzoe\Desktop\Jueguito\Pruebas-Jueguito\Interfaz\fotovictoria.jpeg")
+                
+                pantalla.blit(victoriaimagen,[0,0])
+                pantalla.blit(tiempoMax,[Ancho//3,0])
+                pantalla.blit(tiempoRecord,[Ancho//3,Alto])
+                pygame.display.flip()
+                if reprod == False:
+                    ostvictoria.play()
+                    reprod = True
+                    
