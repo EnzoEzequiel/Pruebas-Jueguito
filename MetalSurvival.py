@@ -98,8 +98,8 @@ class Aliado (pygame.sprite.Sprite):
         self.zona_ataque = None
         self.zona_muerte = None
         self.radius = [40,50,50,20,40]
-        #self.damage=[1,2,1,5,8]
-        self.damage=[8,8,8,8,8]
+        self.damage=[1,2,1,5,8]
+        #self.damage=[8,8,8,8,8] DAMAGE ALTO PARA PRUEBAS
         self.espera=[[0,30],[0,30],[0,15],[0,30],[0,45]]
         self.attack = False
 
